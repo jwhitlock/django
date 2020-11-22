@@ -67,6 +67,21 @@ transitional setting is recommended if you need a gradual update path.
 
 .. _pytz_deprecation_shim: https://pytz-deprecation-shim.readthedocs.io/en/latest/index.html
 .. _migration guide: https://pytz-deprecation-shim.readthedocs.io/en/latest/migration.html
+Database defaults
+-----------------
+
+The new :attr:`db_default <django.db.models.Field.db_default>` argument of
+:class:`Field() <django.db.models.Field>` enables setting a default value for
+use by the database. For example::
+
+    from django.db import models
+    from django.db.models.functions import Now, Pi
+
+
+    class MyModel(models.Model):
+        age = models.IntegerField(db_default=18)
+        created = models.DateTimeField(db_default=Now())
+        circumference = models.FloatField(db_default=2 * Pi())
 
 Functional unique constraints
 -----------------------------

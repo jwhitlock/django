@@ -1044,6 +1044,7 @@ class MigrationAutodetector:
         preserve_default = (
             field.null
             or field.has_default()
+            or field.has_db_default()
             or field.many_to_many
             or (field.blank and field.empty_strings_allowed)
             or (isinstance(field, time_fields) and field.auto_now)
@@ -1191,6 +1192,7 @@ class MigrationAutodetector:
                         old_field.null
                         and not new_field.null
                         and not new_field.has_default()
+                        and not new_field.has_db_default()
                         and not new_field.many_to_many
                     ):
                         field = new_field.clone()

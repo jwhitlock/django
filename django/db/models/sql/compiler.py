@@ -1682,10 +1682,10 @@ class SQLInsertCompiler(SQLCompiler):
             on_conflict=self.query.on_conflict,
         )
         result = ["%s %s" % (insert_statement, qn(opts.db_table))]
-        fields = self.query.fields or [opts.pk]
-        result.append("(%s)" % ", ".join(qn(f.column) for f in fields))
+        fields = self.query.fields
 
-        if self.query.fields:
+        if fields:
+            result.append("(%s)" % ", ".join(qn(f.column) for f in fields))
             value_rows = [
                 [
                     self.prepare_value(field, self.pre_save_val(field, obj))
@@ -1694,6 +1694,7 @@ class SQLInsertCompiler(SQLCompiler):
                 for obj in self.query.objs
             ]
         else:
+            result.append("(%s)" % qn(opts.pk.column))
             # An empty object.
             value_rows = [
                 [self.connection.ops.pk_default_value()] for _ in self.query.objs

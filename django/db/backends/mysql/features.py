@@ -327,3 +327,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         if self.connection.mysql_is_mariadb:
             return self.connection.mysql_version >= (10, 5, 2)
         return True
+
+    @cached_property
+    def supports_functions_in_defaults(self):
+        if self.connection.mysql_is_mariadb:
+            return True
+        return self.connection.mysql_version >= (8, 0, 13)

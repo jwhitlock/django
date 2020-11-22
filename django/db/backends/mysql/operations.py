@@ -1,10 +1,13 @@
 import uuid
 
 from django.conf import settings
+from django.db import NotSupportedError
 from django.db.backends.base.operations import BaseDatabaseOperations
 from django.db.backends.utils import split_tzname_delta
 from django.db.models import Exists, ExpressionWrapper, Lookup
 from django.db.models.constants import OnConflict
+from django.db.models.expressions import Value
+from django.db.models.functions import Now
 from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.regex_helper import _lazy_re_compile
@@ -461,4 +464,21 @@ class DatabaseOperations(BaseDatabaseOperations):
             on_conflict,
             update_fields,
             unique_fields,
+        )
+
+    def check_field_default_support(self, expression):
+        super().check_field_default_support(expression)
+
+        if self.connection.features.supports_functions_in_defaults:
+            # MySQL after 8.0.13 supports functions in defaults
+            return
+
+        if isinstance(expression, (Now, Value)):
+            # MySQL before 8.0.13 supports CURRENT_TIMESTAMP and literal
+            # values as defaults
+            return
+
+        version = self.connection.mysql_version
+        raise NotSupportedError(
+            f"MySQL {version} doesn't support functions as database defaults."
         )

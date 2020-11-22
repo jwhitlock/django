@@ -62,6 +62,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             PRIMARY KEY(column_1, column_2)
         )
     """
+    supports_default_keyword_in_insert = False
 
     @cached_property
     def django_test_skips(self):
