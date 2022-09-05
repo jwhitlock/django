@@ -70,11 +70,11 @@ class FieldDeconstructionTests(SimpleTestCase):
         self.assertEqual(path, "django.db.models.BooleanField")
         self.assertEqual(args, [])
         self.assertEqual(kwargs, {})
-        field = models.BooleanField(default=True)
+        field = models.BooleanField(default=True, db_default=True)
         name, path, args, kwargs = field.deconstruct()
         self.assertEqual(path, "django.db.models.BooleanField")
         self.assertEqual(args, [])
-        self.assertEqual(kwargs, {"default": True})
+        self.assertEqual(kwargs, {"default": True, "db_default": True})
 
     def test_char_field(self):
         field = models.CharField(max_length=65)
@@ -449,6 +449,11 @@ class FieldDeconstructionTests(SimpleTestCase):
         self.assertEqual(path, "django.db.models.IntegerField")
         self.assertEqual(args, [])
         self.assertEqual(kwargs, {})
+        field = models.IntegerField(default=0, db_default=0)
+        name, path, args, kwargs = field.deconstruct()
+        self.assertEqual(path, "django.db.models.IntegerField")
+        self.assertEqual(args, [])
+        self.assertEqual(kwargs, {"default": 0, "db_default": 0})
 
     def test_ip_address_field(self):
         field = models.IPAddressField()

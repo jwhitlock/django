@@ -547,6 +547,7 @@ class Field(RegisterLookupMixin):
             "auto_created": False,
             "validators": [],
             "error_messages": None,
+            "db_default": NOT_PROVIDED,
         }
         attr_overrides = {
             "unique": "_unique",
