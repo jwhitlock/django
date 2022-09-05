@@ -207,6 +207,10 @@ Models
 * :ref:`Registering lookups <lookup-registration-api>` on
   :class:`~django.db.models.Field` instances is now supported.
 
+* The :class:`~django.db.models.Field` constructor now supports a
+  :attr:`~django.db.models.Field.db_default` option to set the default
+  field value in the database (:ticket:`470`).
+
 Requests and Responses
 ~~~~~~~~~~~~~~~~~~~~~~
 

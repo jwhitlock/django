@@ -325,6 +325,33 @@ characters that aren't allowed in Python variable names -- notably, the
 hyphen -- that's OK. Django quotes column and table names behind the
 scenes.
 
+``db_default``
+--------------
+
+.. attribute:: Field.db_default
+
+The default value for the field in the database. This can be a literal value or
+a database function, such as :class:`~django.db.models.functions.Now`::
+
+    created = DateTimeField(db_default=Now())
+
+More complex expressions can be used, as long as they are made from literals
+and database functions::
+
+    month_due = DateField(db_default=TruncMonth(Now() + timedelta(days=90)))
+
+However, a database default may not reference another field. This is invalid::
+
+    end = IntegerField(db_default=F("start") + 50)
+
+``db_default`` can be used when adding a new field in a migration, so that
+code that does not know about the new field can be used with the migrated
+database, such as during a rolling deployment.
+
+.. versionadded:: 4.2
+
+    The ``db_default`` argument was added.
+
 ``db_index``
 ------------
 

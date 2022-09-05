@@ -200,6 +200,7 @@ class Field(RegisterLookupMixin):
         auto_created=False,
         validators=(),
         error_messages=None,
+        db_default=NOT_PROVIDED,
     ):
         self.name = name
         self.verbose_name = verbose_name  # May be set by set_attributes_from_name
@@ -221,6 +222,7 @@ class Field(RegisterLookupMixin):
         self.help_text = help_text
         self.db_index = db_index
         self.db_column = db_column
+        self.db_default = db_default
         self._db_tablespace = db_tablespace
         self.auto_created = auto_created
 
