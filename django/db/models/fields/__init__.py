@@ -949,6 +949,16 @@ class Field(RegisterLookupMixin):
             return return_None
         return str  # return empty string
 
+    def has_db_default(self):
+        """Return a boolean of whether this field has a database default value."""
+        return self.db_default is not NOT_PROVIDED
+
+    def get_db_default(self):
+        """Return the database default value for this field."""
+        if self.has_db_default():
+            return self.db_default
+        return None
+
     def get_choices(
         self,
         include_blank=True,

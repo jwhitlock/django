@@ -4556,6 +4556,25 @@ class SchemaTests(TransactionTestCase):
             cast_function=lambda x: x.time(),
         )
 
+    def test_add_field_with_default_and_different_db_default(self):
+        # Create the table
+        with connection.schema_editor() as editor:
+            editor.create_model(Author)
+        # Create a row
+        Author.objects.create(name="Anon Author 1")
+        # Add a field with a database default
+        version = IntegerField(default=2, db_default=1)
+        version.set_attributes_from_name("version")
+        self.check_added_field_default(editor, Author, version, "version", 2)
+        db_table = Author._meta.db_table
+        with connection.cursor() as cursor:
+            cursor.execute("INSERT INTO {} (name) VALUES ('Author 2')".format(db_table))
+            cursor.execute(
+                "SELECT version FROM {} WHERE name='Author 2'".format(db_table)
+            )
+            database_default = cursor.fetchall()[0][0]
+        self.assertEqual(database_default, 1)
+
     def test_namespaced_db_table_create_index_name(self):
         """
         Table names are stripped of their namespace/schema before being used to

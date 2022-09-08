@@ -213,7 +213,9 @@ class BaseDatabaseSchemaEditor:
         params = []
         for field in model._meta.local_fields:
             # SQL.
-            definition, extra_params = self.column_sql(model, field)
+            definition, extra_params = self.column_sql(
+                model, field, include_db_default=True
+            )
             if definition is None:
                 continue
             # Check constraints can go on the column SQL here.
@@ -283,7 +285,14 @@ class BaseDatabaseSchemaEditor:
     # Field <-> database mapping functions
 
     def _iter_column_sql(
-        self, column_db_type, params, model, field, field_db_params, include_default
+        self,
+        column_db_type,
+        params,
+        model,
+        field,
+        field_db_params,
+        include_default,
+        include_db_default,
     ):
         yield column_db_type
         if collation := field_db_params.get("collation"):
@@ -300,8 +309,11 @@ class BaseDatabaseSchemaEditor:
             # MySQL longtext and longblob).
             not (null and self.skip_default_on_alter(field))
         )
-        if include_default:
-            default_value = self.effective_default(field)
+        if include_default or (include_db_default and field.has_db_default()):
+            if include_default:
+                default_value = self.effective_default(field)
+            else:
+                default_value = self.effective_db_default(field)
             if default_value is not None:
                 column_default = "DEFAULT " + self._column_default_sql(field)
                 if self.connection.features.requires_literal_defaults:
@@ -337,7 +349,7 @@ class BaseDatabaseSchemaEditor:
         ):
             yield self.connection.ops.tablespace_sql(tablespace, inline=True)
 
-    def column_sql(self, model, field, include_default=False):
+    def column_sql(self, model, field, include_default=False, include_db_default=False):
         """
         Return the column definition for a field. The field must already have
         had set_attributes_from_name() called.
@@ -359,6 +371,7 @@ class BaseDatabaseSchemaEditor:
                     field,
                     field_db_params,
                     include_default,
+                    include_db_default,
                 )
             ),
             params,
@@ -421,6 +434,21 @@ class BaseDatabaseSchemaEditor:
     def effective_default(self, field):
         """Return a field's effective database default value."""
         return field.get_db_prep_save(self._effective_default(field), self.connection)
+
+    @staticmethod
+    def _effective_db_default(field):
+        # This method allows testing its logic without a connection.
+        if field.has_db_default():
+            default = field.get_db_default()
+        else:
+            default = None
+        return default
+
+    def effective_db_default(self, field):
+        """Return a field's effective persistant database default value."""
+        return field.get_db_prep_save(
+            self._effective_db_default(field), self.connection
+        )
 
     def quote_value(self, value):
         """
@@ -684,9 +712,14 @@ class BaseDatabaseSchemaEditor:
             not self.skip_default_on_alter(field)
             and self.effective_default(field) is not None
         ):
-            changes_sql, params = self._alter_column_default_sql(
-                model, None, field, drop=True
-            )
+            if field.has_db_default():
+                changes_sql, params = self._alter_column_default_sql(
+                    model, None, field, db_default=True
+                )
+            else:
+                changes_sql, params = self._alter_column_default_sql(
+                    model, None, field, drop=True
+                )
             sql = self.sql_alter_column % {
                 "table": self.quote_name(model._meta.db_table),
                 "changes": changes_sql,
@@ -1169,14 +1202,19 @@ class BaseDatabaseSchemaEditor:
                 [],
             )
 
-    def _alter_column_default_sql(self, model, old_field, new_field, drop=False):
+    def _alter_column_default_sql(
+        self, model, old_field, new_field, drop=False, db_default=False
+    ):
         """
         Hook to specialize column default alteration.
 
         Return a (sql, params) fragment to add or drop (depending on the drop
         argument) a default to new_field's column.
         """
-        new_default = self.effective_default(new_field)
+        if db_default:
+            new_default = self.effective_db_default(new_field)
+        else:
+            new_default = self.effective_default(new_field)
         default = self._column_default_sql(new_field)
         params = [new_default]
 
